@@ -1,0 +1,47 @@
+# For a more secure and flexible setup, consider using environment variables from an .env file. 
+# Reference: https://docs.docker.com/compose/environment-variables/set-environment-variables/
+version: '3.7'
+
+services:
+  mysql-datasource:
+    image: mysql:8
+    container_name: mysql-datasource
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-Password@123}
+      MYSQL_DATABASE: ratemaster
+      MYSQL_USER: ${MYSQL_USER:-ratemaster}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-Password@123}
+    networks:
+      - ratemaster-network
+
+  redis-cache:
+    image: redis
+    container_name: redis-cache
+    command: redis-server --requirepass "${REDIS_PASSWORD:-Password@123}"
+    networks:
+      - ratemaster-network
+
+  backend-application:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: backend-application
+    ports:
+    - 8080:8080
+    depends_on:
+      - mysql-datasource
+      - redis-cache
+    environment:
+      MYSQL_URL: jdbc:mysql://mysql-datasource:3306/ratemaster
+      MYSQL_USERNAME: ${MYSQL_USER:-ratemaster}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-Password@123}
+      REDIS_HOSTNAME: redis-cache
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-Password@123}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-093617ebfa4b9af9700db274ac204ffa34195494d97b9c26c23ad561de817926}
+    networks:
+      - ratemaster-network
+    restart: on-failure:5
+
+networks:
+  ratemaster-network:
