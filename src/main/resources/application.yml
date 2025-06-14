@@ -1,0 +1,61 @@
+server:
+  port: 8080
+
+grpc:
+  server:
+    port: 9090
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  endpoint:
+    health:
+      show-details: always
+
+spring:
+  application:
+    name: ratemaster-overseer
+  datasource:
+    url: ${MYSQL_URL}
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: ${REDIS_HOSTNAME}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+
+hierarchical-rate-limits:
+  global:
+    limit-per-hour: 100000
+  tenants:
+    premium:
+      limit-per-hour: 50000
+    standard:
+      limit-per-hour: 10000
+  users:
+    default-per-tenant: 1000
+
+com:
+  ratemaster:
+    overseer:
+      token:
+        secret-key: ${JWT_SECRET_KEY}
+        validity: 120
+      open-api:
+        enabled: true
+        api-version: 1.0.0
+        title: RateMaster Overseer
+        description: Backend application imposing rate limit on private API endpoints using token bucket algorithm
